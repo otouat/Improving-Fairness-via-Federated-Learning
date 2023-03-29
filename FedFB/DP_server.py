@@ -1230,7 +1230,7 @@ class Client(object):
                 # This is convenient while training RNNs
                 
                 probas, logits = model(features)
-                loss, _, _ = loss_func(self.option, logits, labels, probas, sensitive, self.penalty)
+                loss, _, _ = loss_func(self.option, logits.to(DEVICE), labels.to(DEVICE), probas, sensitive, self.penalty)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
