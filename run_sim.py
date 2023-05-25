@@ -6,4 +6,5 @@ from DP_run import *
 
 
 # RUN BASELINE FEDAVG on ADULT DATASET
-sim_dp('fedavg', 'logistic regression', 'adult')
+sim_dp('fairfed', 'logistic regression', 'adult')
+

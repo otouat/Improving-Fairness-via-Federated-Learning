@@ -14,7 +14,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class Server(object):
     def __init__(self, model, dataset_info, seed = 123, num_workers = 4, ret = False, 
-                train_prn = False, metric = "Demographic disparity", select_round = False,
+                train_prn = False, metric = "Risk Difference", select_round = False,
                 batch_size = 128, print_every = 1, fraction_clients = 1, Z = 2, prn = True, trial = False):
         """
         Server execution.
@@ -859,7 +859,7 @@ class Server(object):
         train_loss, train_accuracy = [], []
         start_time = time.time()
         weights = self.model.state_dict()
-
+        print(self.disparity)
         lbd, m_yz = [None for _ in range(self.num_clients)], [None for _ in range(self.num_clients)]
         
         for round_ in tqdm(range(num_rounds)):
@@ -889,7 +889,7 @@ class Server(object):
                             c+1, acc_loss, fair_loss, self.metric, self.disparity(n_yz_c)))
 
             train_accuracy.append(sum(list_acc)/len(list_acc))
-            
+            print(n_yz)
             for c in range(self.num_clients):
                 nw[c] = np.exp(-beta * abs(nw[c] - self.disparity(n_yz))) * len(self.clients_idx[c]) / len(self.train_dataset)
 
@@ -914,11 +914,10 @@ class Server(object):
                 local_model = Client(dataset=self.train_dataset, idxs=self.clients_idx[idx], 
                             batch_size = self.batch_size, option = "FB-Variant1", seed = self.seed, prn = self.train_prn, Z = self.Z)
 
-                w, loss, _, lbd_, m_yz_ = local_model.local_fb(
-                                model=copy.deepcopy(self.model), 
+                w, loss = local_model.standard_update(
+                                model=copy.deepcopy(self.model), global_round=round_, 
                                     learning_rate = learning_rate, local_epochs = local_epochs, 
-                                    optimizer = optimizer, alpha = alpha, lbd = lbd[idx], m_yz = m_yz[idx])
-                lbd[idx], m_yz[idx] = lbd_, m_yz_
+                                    optimizer = optimizer)
                 local_weights.append(copy.deepcopy(w))
                 local_losses.append(copy.deepcopy(loss))
 
@@ -974,7 +973,7 @@ class Server(object):
 
                 _, Theta_X = self.model(features)
 
-                _,_,loss = loss_with_agnostic_fair(Theta_X, labels, sensitive, sen_bar, penalty)
+                _,_,loss = loss_with_agnostic_fair(Theta_X, labels.to(DEVICE), sensitive, sen_bar, penalty)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -1181,7 +1180,7 @@ class Client(object):
         self.Z = Z
         self.trainloader, self.validloader = self.train_val(dataset, list(idxs), batch_size)
         self.penalty = penalty
-        self.disparity = DPDisparity
+        self.disparity = riskDifference
 
     def train_val(self, dataset, idxs, batch_size):
         """
@@ -1324,16 +1323,15 @@ class Client(object):
                 features, labels = features.to(DEVICE), labels.to(DEVICE).type(torch.LongTensor)
                 sensitive = sensitive.to(DEVICE)
                 _, logits = model(features)
-
                 v = torch.ones(len(labels)).type(torch.DoubleTensor)
                 
                 group_idx = {}
                 for y, z in lbd:
-                    group_idx[(y,z)] = torch.where((labels == y) & (sensitive == z))[0]
+                    group_idx[(y,z)] = torch.where((labels.to(DEVICE) == y) & (sensitive == z))[0]
                     v[group_idx[(y,z)]] = lbd[(y,z)] / (m_yz[(1,z)] + m_yz[(0,z)])
                     nc += v[group_idx[(y,z)]].sum().item()
 
-                loss = weighted_loss(logits, labels, v, False)
+                loss = weighted_loss(logits.to(DEVICE), labels.to(DEVICE), v.to(DEVICE), False)
 
                 optimizer.zero_grad()
                 if not np.isnan(loss.item()): loss.backward()

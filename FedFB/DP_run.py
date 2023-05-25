@@ -114,7 +114,7 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
         trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
@@ -166,7 +166,7 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
         trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
@@ -219,7 +219,7 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
         trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
@@ -317,7 +317,7 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
         trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
@@ -368,10 +368,12 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         # get test result of the trained model
         server = Server(arc(num_features=num_features, num_classes=2, seed = seed), info, train_prn = False, seed = seed, Z = Z, ret = True, prn = False)
         trained_model = copy.deepcopy(server.model)
-        trained_model.load_state_dict(torch.load(os.path.join(best_trial.checkpoint.value, 'checkpoint')))
+        best_checkpoint = analysis.get_best_checkpoint(trial=best_trial, metric="accuracy", mode="max")
+        best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
+        trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         trained_model.to(DEVICE)
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
@@ -418,9 +420,11 @@ def sim_dp(method, model, dataset, num_sim = 5, seed = 0, resources_per_trial = 
         # get test result of the trained model
         server = Server(arc(num_features=num_features, num_classes=2, seed = seed), info, train_prn = False, seed = seed, Z = Z, ret = True, prn = False)
         trained_model = copy.deepcopy(server.model)
-        trained_model.load_state_dict(torch.load(os.path.join(best_trial.checkpoint.value, 'checkpoint')))
+        best_checkpoint = analysis.get_best_checkpoint(trial=best_trial, metric="accuracy", mode="max")
+        best_checkpoint_dir = best_checkpoint.to_directory(path="directory")
+        trained_model.load_state_dict(torch.load(os.path.join(best_checkpoint_dir, 'checkpoint')))
         test_acc, n_yz = server.test_inference(trained_model)
-        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': DPDisparity(n_yz)}])
+        df = pd.DataFrame([{'accuracy': test_acc, 'DP Disp': riskDifference(n_yz)}])
 
         # use the same hyperparameters for other seeds
         for seed in range(1, num_sim):
